@@ -97,23 +97,58 @@ def load_netcdf_data(filename):
 
 def load_quality_flags(dep_id, data_type):
     """Load quality flags based on deployment ID and data type"""
-    # First, try to load from CSV file in the current directory
+    # First, try to load from netCDF file in the current directory
     if 'sal' in data_type.lower():
-        csv_filename = f"qual_dm_sz_{dep_id}.csv"
+        nc_filename = f"qual_dm_sz_{dep_id}.nc"
+        variable_prefix = 'salinity'
     elif 'dens' in data_type.lower():
-        csv_filename = f"qual_dm_dz_{dep_id}.csv"
+        nc_filename = f"qual_dm_dz_{dep_id}.nc"
+        variable_prefix = 'density'
     else:
-        csv_filename = None
+        nc_filename = None
+        variable_prefix = None
     
-    if csv_filename and os.path.exists(csv_filename):
+    # Try netCDF first
+    if nc_filename and os.path.exists(nc_filename):
         try:
-            print(f"Loading quality flags from CSV file: {csv_filename}")
-            # Read the CSV with multi-index columns
-            df_qual = pd.read_csv(csv_filename, header=[0, 1, 2], index_col=0, parse_dates=True)
-            print(f"Loaded {len(df_qual)} rows and {len(df_qual.columns)} columns of quality flags")
+            print(f"Loading quality flags from netCDF file: {nc_filename}")
+            flag_ds = xr.open_dataset(nc_filename)
+            
+            # Get time coordinate
+            time_index = pd.DatetimeIndex(flag_ds.time.values)
+            
+            # Create list to store column tuples
+            columns = []
+            data_dict = {}
+            
+            # Extract flag variables and build multi-index columns
+            for var in flag_ds.data_vars:
+                if f'{variable_prefix}_flags_' in var:
+                    serial = flag_ds[var].attrs.get('serial_number', '')
+                    depth_label = flag_ds[var].attrs.get('depth_label', '')
+                    
+                    # Create tuple column name (instance, serial, depth_label)
+                    col = (1, serial, depth_label)
+                    columns.append(col)
+                    data_dict[col] = flag_ds[var].values
+            
+            flag_ds.close()
+            
+            # Create DataFrame with proper MultiIndex columns
+            df_qual = pd.DataFrame(data_dict, index=time_index)
+            df_qual.columns = pd.MultiIndex.from_tuples(
+                df_qual.columns,
+                names=['instance', 'serial', 'depth']
+            )
+            
+            print(f"Loaded {len(df_qual)} rows and {len(df_qual.columns)} columns of quality flags from netCDF")
             return df_qual
         except Exception as e:
-            print(f"Warning: Error loading CSV quality flags: {e}. Trying Deployment object.")
+            print(f"Warning: Error loading netCDF quality flags: {e}. Trying deployment object.")
+            import traceback
+            traceback.print_exc()
+    else:
+        print(f"netCDF quality flag file not found: {nc_filename}. Trying deployment object.")
     
     # If CSV not found or failed, try loading from Deployment object
     try:
@@ -161,7 +196,7 @@ def load_quality_flags(dep_id, data_type):
         return df_qual
 
     except ImportError:
-        print("Warning: tao.flex.data module not available. Skipping quality flags.")
+        print("Warning: flex.data module not available. Skipping quality flags.")
         return None
     except Exception as e:
         print(f"Warning: Error loading quality flags: {e}. Skipping quality flags.")
@@ -279,7 +314,7 @@ def create_plot(data, title, y_label, shared_x_range=None, invert_y=False):
         # Get the data for this column
         y_data = data[col]
 
-        # Create legend label
+        # Create legend label - show full tuple (instance, serial, depth)
         if isinstance(col, tuple):
             legend_label = ' '.join(str(x) for x in col)
         else:
