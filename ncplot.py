@@ -36,7 +36,7 @@ def get_y_label(filename):
     elif 'cond' in filename:
         return 'Conductivity (mS/cm)'
     elif 'dens' in filename:
-        return 'Density (kg/m³)'
+        return 'Potential Density (σ₀)'
     return 'Value'
 
 def should_invert_y_axis(filename):
@@ -104,6 +104,9 @@ def load_quality_flags(dep_id, data_type):
     elif 'dens' in data_type.lower():
         nc_filename = f"qual_dm_dz_{dep_id}.nc"
         variable_prefix = 'density'
+    elif 'cond' in data_type.lower():
+        nc_filename = f"qual_dm_cz_{dep_id}.nc"
+        variable_prefix = 'conductivity'
     else:
         nc_filename = None
         variable_prefix = None
@@ -188,6 +191,8 @@ def load_quality_flags(dep_id, data_type):
             qual = dep.SZ.qual_dm
         elif 'dens' in data_type.lower():
             qual = dep.DZ.qual_dm
+        elif 'cond' in data_type.lower():
+            qual = dep.CZ.qual_dm
         else:
             return None
 
@@ -230,8 +235,10 @@ def mask_negative_quality_flags(data, quality_flags):
 
             if matching_cols:
                 qf_col = matching_cols[0]
+                # Align quality flags with data index before masking
+                aligned_flags = quality_flags[qf_col].reindex(masked_data.index)
                 # Create boolean mask for negative quality flags
-                mask = quality_flags[qf_col] < 0
+                mask = aligned_flags < 0
                 num_flagged = mask.sum()
                 if num_flagged > 0:
                     print(f"  Masking {num_flagged} flagged points in {depth_label}")
@@ -441,6 +448,11 @@ Examples:
             non_nan = data[col].notna().sum()
             print(f"  {col[2]:6} (serial {col[1]}) -> {non_nan} non-NaN values")
 
+        # Filter by specified depths BEFORE applying quality flags
+        # This ensures we only process the columns we need
+        if args.depths:
+            data = filter_data_by_depths(data, args.depths)
+        
         # Apply quality flags if enabled
         if not args.no_qc:
             dep_id = extract_dep_id(os.path.basename(args.filename))
@@ -450,10 +462,15 @@ Examples:
             else:
                 print("Proceeding with unmasked data")
 
-        # Filter by specified depths
-        if args.depths:
-            data = filter_data_by_depths(data, args.depths)
-
+        # Trim data to actual data extent (remove leading/trailing all-NaN rows)
+        # Find first and last rows with any non-NaN data
+        has_data = data.notna().any(axis=1)
+        if has_data.any():
+            first_valid = has_data.idxmax()
+            last_valid = has_data[::-1].idxmax()
+            data = data.loc[first_valid:last_valid]
+            print(f"Data range: {first_valid} to {last_valid}")
+        
         # Create daily averaged data
         print("\nCreating daily averages...")
         daily_data = data.resample('D').mean()
@@ -475,7 +492,13 @@ Examples:
                         invert_y=should_invert_y_axis(args.filename))
 
         # Set output file in current working directory
-        output_filename = os.path.splitext(os.path.basename(args.filename))[0] + "_plot.html"
+        # Add depth suffix if specific depths were requested
+        base_name = os.path.splitext(os.path.basename(args.filename))[0]
+        if args.depths:
+            depth_suffix = "_" + "_".join(args.depths)
+            output_filename = base_name + depth_suffix + "_plot.html"
+        else:
+            output_filename = base_name + "_plot.html"
         output_path = os.path.join(os.getcwd(), output_filename)
         output_file(output_path)
 
