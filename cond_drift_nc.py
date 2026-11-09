@@ -614,7 +614,12 @@ def create_comparison_plots(args, sal_orig, sal_drift):
         # Create figure
         p = figure(width=600, height=400,
                    x_axis_type='datetime',
-                   title=f'Salinity Comparison at {column[2]}')
+                   title=f'Salinity Comparison at {column[2]}',
+                   background_fill_color='#eaeaf2')
+        
+        # Style fonts consistently
+        p.title.text_font_size = "14pt"
+        p.title.align = "center"
 
         try:
             # Calculate statistics
@@ -652,9 +657,13 @@ def create_comparison_plots(args, sal_orig, sal_drift):
             p.legend.location = 'top_left'
 
             # Customize plot
-            p.xaxis.axis_label = 'Time'
             p.yaxis.axis_label = 'Salinity (PSU)'
             p.grid.grid_line_alpha = 0.3
+            
+            # Style axis labels and ticks
+            p.xaxis.major_label_text_font_size = "11pt"
+            p.yaxis.major_label_text_font_size = "11pt"
+            p.yaxis.axis_label_text_font_size = "11pt"
 
             plots.append(p)
 

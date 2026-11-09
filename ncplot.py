@@ -263,12 +263,11 @@ def create_plot(data, title, y_label, shared_x_range=None, invert_y=False):
     # Create figure with shared x_range if provided
     fig_kwargs = {
         'title': title,
-        'x_axis_label': 'Date',
         'y_axis_label': y_label,
         'width': 1200,
         'height': 400,
         'x_axis_type': "datetime",
-        'background_fill_color': "#f5f5f5",  # Very light gray, almost white
+        'background_fill_color': "#eaeaf2",  # Seaborn-like blue-ish grey background
         'tools': 'pan,box_zoom,wheel_zoom,reset,save'
     }
     
@@ -276,6 +275,10 @@ def create_plot(data, title, y_label, shared_x_range=None, invert_y=False):
         fig_kwargs['x_range'] = shared_x_range
     
     p = figure(**fig_kwargs)
+    
+    # Style the title with larger font
+    p.title.text_font_size = "14pt"
+    p.title.align = "center"
 
     if invert_y:
         p.y_range.flipped = True
@@ -286,6 +289,13 @@ def create_plot(data, title, y_label, shared_x_range=None, invert_y=False):
         months="%Y-%m-%d",
         years="%Y-%m-%d"
     )
+    
+    # Increase font size for axis tick labels
+    p.xaxis.major_label_text_font_size = "11pt"
+    p.yaxis.major_label_text_font_size = "11pt"
+    
+    # Match y-axis label font size to tick labels
+    p.yaxis.axis_label_text_font_size = "11pt"
 
     # Define high-contrast, easily distinguishable colors
     # Avoiding light/pastel colors that are hard to see
@@ -503,6 +513,20 @@ Examples:
         output_file(output_path)
 
         print(f"\nGenerating plot: {output_path}")
+        
+        # Link legends so clicking in p1's legend controls both plots
+        # For each legend item in p1, add the corresponding renderers from p2
+        for item1 in p1.legend.items:
+            # Find matching legend items in p2 by label
+            for item2 in p2.legend.items:
+                if item1.label == item2.label:
+                    # Add p2's renderers to p1's legend item
+                    item1.renderers.extend(item2.renderers)
+                    break
+        
+        # Hide legend on bottom plot so only top legend is visible
+        p2.legend.visible = False
+        
         # Show both plots in a column layout
         show(column(p1, p2))
         

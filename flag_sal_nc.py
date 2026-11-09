@@ -255,7 +255,15 @@ for config, label in sensor_configs:
         tools="box_select,lasso_select,pan,box_zoom,reset,save",
         title=f"{label}",
         x_axis_type="datetime",
+        background_fill_color='#eaeaf2'
     )
+    
+    # Style fonts consistently
+    p.title.text_font_size = "14pt"
+    p.title.align = "center"
+    p.xaxis.major_label_text_font_size = "11pt"
+    p.yaxis.major_label_text_font_size = "11pt"
+    p.yaxis.axis_label_text_font_size = "11pt"
 
     # Format x-axis ticks
     p.xaxis.formatter = DatetimeTickFormatter(

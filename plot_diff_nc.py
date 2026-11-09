@@ -153,9 +153,31 @@ def load_salinity_data(args):
             print(f"Error reading netCDF file: {str(e)}")
             sys.exit(1)
     else:
-        # Original data loading code
-        dep_path = home + "/data/flexram/" + args.dep_id + "/serialized/" + args.dep_id + "_flashfile-nparray-py3.bz2"
-        meta_path = home + "/data/flexram/" + args.dep_id + "/config.xml"
+        # Original data loading code - try multiple possible paths
+        possible_paths = [
+            (home + "/data/flexram/" + args.dep_id + "-proc/data/subsurface/" + args.dep_id + "-sbe-data.bz2",
+             home + "/data/flexram/" + args.dep_id + "-proc/data/subsurface/config.xml"),
+            (home + "/data/flexram/" + args.dep_id + "/serialized/" + args.dep_id + "_flashfile-nparray-py3.bz2",
+             home + "/data/flexram/" + args.dep_id + "/config.xml"),
+        ]
+        
+        dep_path = None
+        meta_path = None
+        
+        for dp, mp in possible_paths:
+            if os.path.exists(dp):
+                dep_path = dp
+                meta_path = mp
+                break
+        
+        if dep_path is None:
+            print(f"\nError: Could not find serialized deployment file for {args.dep_id}")
+            print(f"\nTried:")
+            for dp, mp in possible_paths:
+                print(f"  {dp}")
+            print(f"\nTip: Use --rcl option to read from a netCDF file instead:")
+            print(f"  python plot_diff_nc.py {args.dep_id} {args.inst_col} --rcl ~/data/flexram/{args.dep_id}-proc/sal/{args.dep_id}_sal_adjusted.nc")
+            sys.exit(1)
         
         print(f"Loading deployment data from: {dep_path}")
 
@@ -205,9 +227,20 @@ def create_bokeh_plot(df, column_name, plot_index):
 
     p = figure(title=column_name, x_axis_type="datetime", width=1200, height=300)
 
-    # Add light grey background
-    p.background_fill_color = "#f5f5f5"
-    p.background_fill_alpha = 0.5
+    # Add seaborn-like blue-ish grey background
+    p.background_fill_color = "#eaeaf2"
+    p.background_fill_alpha = 1.0
+    
+    # Style the title with larger font
+    p.title.text_font_size = "14pt"
+    p.title.align = "center"
+    
+    # Increase font size for axis tick labels
+    p.xaxis.major_label_text_font_size = "11pt"
+    p.yaxis.major_label_text_font_size = "11pt"
+    
+    # Match y-axis label font size to tick labels
+    p.yaxis.axis_label_text_font_size = "11pt"
 
     # Add dotted green line at y=0 spanning entire x-range
     p.add_layout(Span(location=0, dimension='width', line_color='green',

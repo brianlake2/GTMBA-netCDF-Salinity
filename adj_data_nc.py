@@ -605,7 +605,8 @@ def process_data(dep_id, input_file=None, rcl_file=None):
             p = figure(width=1200, height=400,
                       x_axis_type='datetime',
                       y_range=(y_min - y_buffer, y_max + y_buffer),
-                      title=f'Original vs Adjusted Data - {column_name}')
+                      title=f'Original vs Adjusted Data - {column_name}',
+                      background_fill_color='#eaeaf2')
 
             # Add HoverTool
             hover = HoverTool(
@@ -653,15 +654,18 @@ def process_data(dep_id, input_file=None, rcl_file=None):
                 months="%Y-%m-%d",
                 years="%Y-%m-%d"
             )
-            p.xaxis.axis_label = 'Date'
             p.yaxis.axis_label = 'Salinity (PSU)'
             p.legend.click_policy = "hide"
             p.legend.location = "top_right"
             p.xgrid.grid_line_color = None
             p.ygrid.grid_line_color = None
-            p.xaxis.axis_label_text_font_size = "10pt"
-            p.yaxis.axis_label_text_font_size = "10pt"
-            p.title.text_font_size = "12pt"
+            
+            # Style fonts consistently
+            p.title.text_font_size = "14pt"
+            p.title.align = "center"
+            p.xaxis.major_label_text_font_size = "11pt"
+            p.yaxis.major_label_text_font_size = "11pt"
+            p.yaxis.axis_label_text_font_size = "11pt"
 
             # Rotate x-axis labels
             p.xaxis.major_label_orientation = 0.7

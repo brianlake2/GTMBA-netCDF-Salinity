@@ -124,10 +124,18 @@ x_range1 = (saldf_plot.index.min(), saldf_plot.index.max())
 x_range2 = (saldf2_plot.index.min(), saldf2_plot.index.max())
 
 # Create Bokeh figures with increased width and height
-p1 = figure(title=did, x_axis_label='Date', y_axis_label='Salinity', x_range=x_range1, y_range=y_range,
-           width=800, height=600, x_axis_type="datetime", toolbar_location="left", background_fill_color="lightgrey")
-p2 = figure(title=did2, x_axis_label='Date', y_axis_label='Salinity', x_range=x_range2, y_range=y_range,
-           width=800, height=600, x_axis_type="datetime", background_fill_color="lightgrey")
+p1 = figure(title=did, y_axis_label='Salinity', x_range=x_range1, y_range=y_range,
+           width=800, height=600, x_axis_type="datetime", toolbar_location="left", background_fill_color="#eaeaf2")
+p2 = figure(title=did2, y_axis_label='Salinity', x_range=x_range2, y_range=y_range,
+           width=800, height=600, x_axis_type="datetime", background_fill_color="#eaeaf2")
+
+# Style fonts consistently for both plots
+for p in [p1, p2]:
+    p.title.text_font_size = "14pt"
+    p.title.align = "center"
+    p.xaxis.major_label_text_font_size = "11pt"
+    p.yaxis.major_label_text_font_size = "11pt"
+    p.yaxis.axis_label_text_font_size = "11pt"
 
 # Link the y-ranges of both plots
 p1.y_range = p2.y_range
