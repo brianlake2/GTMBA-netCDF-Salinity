@@ -268,7 +268,7 @@ def create_plot(data, title, y_label, shared_x_range=None, invert_y=False):
         'height': 400,
         'x_axis_type': "datetime",
         'background_fill_color': "#eaeaf2",  # Seaborn-like blue-ish grey background
-        'tools': 'pan,box_zoom,wheel_zoom,reset,save'
+        'tools': 'pan,box_zoom,wheel_zoom,reset,save,fullscreen'
     }
     
     if shared_x_range is not None:
@@ -296,6 +296,14 @@ def create_plot(data, title, y_label, shared_x_range=None, invert_y=False):
     
     # Match y-axis label font size to tick labels
     p.yaxis.axis_label_text_font_size = "11pt"
+    
+    # Make grid more visible
+    p.xgrid.grid_line_color = "white"
+    p.xgrid.grid_line_alpha = 0.8
+    p.xgrid.grid_line_width = 1
+    p.ygrid.grid_line_color = "white"
+    p.ygrid.grid_line_alpha = 0.8
+    p.ygrid.grid_line_width = 1
 
     # Define high-contrast, easily distinguishable colors
     # Avoiding light/pastel colors that are hard to see
@@ -493,13 +501,16 @@ Examples:
                         shared_x_range=None,
                         invert_y=should_invert_y_axis(args.filename))
 
-        # Create second plot with shared x_range from first plot
+        # Create second plot with shared x_range and y_range from first plot
         print("Creating daily averaged plot...")
         p2 = create_plot(daily_data,
                         f"{os.path.basename(args.filename)} - Daily Averaged",
                         y_label,
                         shared_x_range=p1.x_range,
                         invert_y=should_invert_y_axis(args.filename))
+        
+        # Link y-axis between both plots
+        p2.y_range = p1.y_range
 
         # Set output file in current working directory
         # Add depth suffix if specific depths were requested
